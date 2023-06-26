@@ -87,3 +87,41 @@ class Aktyor_delAPIView(APIView):
         aktyor = Aktyor.objects.get(id=pk)
         aktyor.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+class KinolarAPIView(APIView):
+    def get(self, request):
+        kinolar = Kino.objects.all()
+        serializer = KinoSerializer(kinolar, many=True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+    def post(self,request):
+        kino = request.data
+        serializer = KinoSaveSerializer(data = kino)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class KinoDetailView(APIView):
+    def put(self,request,pk):
+        kino = Kino.objects.get(id = pk)
+        malumot = request.data
+        serializer = KinoSaveSerializer(kino, data=malumot)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class KinoAPIView(APIView):
+    def get(self,request,pk):
+        kino = Kino.objects.get(id = pk)
+        serializer = KinoSerializer(kino)
+        return Response(serializer.data)
+    def delete(self,request,pk):
+        Kino.objects.filter(id = pk).delete()
+        return Response({"xabar":"Kino ma'lumoti o'chirildi1"},status=status.HTTP_204_NO_CONTENT)
+

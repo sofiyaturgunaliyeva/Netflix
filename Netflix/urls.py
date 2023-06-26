@@ -8,7 +8,10 @@ urlpatterns = [
     path('hello/', HelloAPIView.as_view()),
     path('aktyorlar/', AktyorlarAPIView.as_view()),
     path('izohlar/', IzohlarAPIView.as_view()),
+    path('kinolar/', KinolarAPIView.as_view()),
     path('bitta_aktyor/<int:pk>/', AktyorAPIView.as_view()),
     path('bitta_izoh/<int:pk>/', IzohAPIView.as_view()),
+    path('bitta_kino/<int:pk>/', KinoAPIView.as_view()),
     path('aktyor_ochir/<int:pk>/', Aktyor_delAPIView.as_view()),
+    path('kino/<int:pk>/', KinoDetailView.as_view()),
 ]
