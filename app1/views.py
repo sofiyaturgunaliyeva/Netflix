@@ -5,8 +5,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import *
 from .serializers import *
-from rest_framework import  status
+from rest_framework import status, filters
 from rest_framework.viewsets import ModelViewSet
+from django.contrib.postgres.search import TrigramSimilarity
 
 
 class HelloAPIView(APIView):
@@ -25,24 +26,30 @@ class HelloAPIView(APIView):
         }
         return Response(d)
 
-# class AktyorlarAPIView(APIView):
-#     def get(self,requset):
-#         aktyorlar = Aktyor.objects.all()
-#         serializer = AktyorSerializer(aktyorlar,many=True)
-#         return Response(serializer.data)
-#
-#     def post(self,request):
-#         malumot = request.data
-#         serializer = AktyorSerializer(data=malumot)
-#         if serializer.is_valid():
-#             Aktyor.objects.create(
-#                 ism = serializer.validated_data.get('ism'),
-#                 davlat = serializer.validated_data.get('davlat'),
-#                 tugilgan_yili = serializer.validated_data.get('tugilgan_yili'),
-#                 jins = serializer.validated_data.get('jins'),
-#             )
-#             return Response(serializer.data,status = status.HTTP_201_CREATED)
-#         return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
+class AktyorlarAPIView(APIView):
+    def get(self,requset):
+        soz = requset.query_params.get('qidiruv')
+        if soz:
+            aktyorlar = Aktyor.objects.annotate(
+                oxshashlik = TrigramSimilarity('ism',soz)
+            ).filter(oxshashlik__gte = 0.1) # ism o'xshashligi 0.1 dan yuqori bo'lgan aktyorlar
+        else:
+            aktyorlar = Aktyor.objects.all()
+        serializer = AktyorSerializer(aktyorlar,many=True)
+        return Response(serializer.data)
+
+    def post(self,request):
+        malumot = request.data
+        serializer = AktyorSerializer(data=malumot)
+        if serializer.is_valid():
+            Aktyor.objects.create(
+                ism = serializer.validated_data.get('ism'),
+                davlat = serializer.validated_data.get('davlat'),
+                tugilgan_yili = serializer.validated_data.get('tugilgan_yili'),
+                jins = serializer.validated_data.get('jins'),
+            )
+            return Response(serializer.data,status = status.HTTP_201_CREATED)
+        return Response(serializer.errors,status = status.HTTP_400_BAD_REQUEST)
 
 
 # class AktyorAPIView(APIView):
@@ -93,19 +100,25 @@ class IzohAPIView(APIView):
 
 
 
-# class KinolarAPIView(APIView):
-#     def get(self, request):
-#         kinolar = Kino.objects.all()
-#         serializer = KinoSerializer(kinolar, many=True)
-#         return Response(serializer.data, status = status.HTTP_200_OK)
+class KinolarAPIView(APIView):
+    def get(self, request):
+        soz = request.query_params.get('qidiruv')
+        if soz:
+            kinolar = Kino.objects.filter(nom__contains = soz)|Kino.objects.filter(
+                janr = soz
+            )
+        else:
+            kinolar = Kino.objects.all()
+        serializer = KinoSerializer(kinolar, many=True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
 
-    # def post(self,request):
-    #     kino = request.data
-    #     serializer = KinoSaveSerializer(data = kino)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def post(self,request):
+        kino = request.data
+        serializer = KinoSaveSerializer(data = kino)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # class KinoDetailView(APIView):
 #     def put(self,request,pk):
@@ -133,11 +146,17 @@ class IzohAPIView(APIView):
 class AktyorModelViewset(ModelViewSet):
     queryset = Aktyor.objects.all()
     serializer_class = AktyorSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter] #  qidiruv uchun
+    search_fields = ['ism','davlat'] # '__all__'    Ism va davlat orqali qidiradi
+    ordering_fields = ['ism','tugilgan_yili','davlat']  # tartiblab chiqaradi
 
 
 class KinoModelViewset(ModelViewSet):
     queryset = Kino.objects.all()
     serializer_class = KinoSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]  # qidiruv uchun
+    search_fields = ['nom', 'janr']  # '__all__'    Nom va janr orqali qidiradi
+    ordering_fields = ['davomiylik', 'reyting']  # tartiblab chiqaradi
 
     @action(detail=True,methods=['GET','POST'])
     def aktyorlar(self,request,pk): # kinolar/1/aktyorlar
