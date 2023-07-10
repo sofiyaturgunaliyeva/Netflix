@@ -1,4 +1,6 @@
+from django.contrib.auth import logout, authenticate
 from django.shortcuts import render
+from rest_framework.permissions import IsAuthenticated
 
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -8,7 +10,7 @@ from .serializers import *
 from rest_framework import status, filters
 from rest_framework.viewsets import ModelViewSet
 from django.contrib.postgres.search import TrigramSimilarity
-
+from rest_framework.authentication import TokenAuthentication
 
 class HelloAPIView(APIView):
     def get(self,request):
@@ -180,3 +182,42 @@ class KinoModelViewset(ModelViewSet):
         actors = kino.aktyorlar.all()
         serializer = AktyorSerializer(actors,many = True)
         return Response(serializer.data,status=status.HTTP_200_OK)
+
+class LoginView(APIView):
+    def post(self, request):
+        malumot = request.data
+        user = authenticate(username = malumot.get("username"),
+                     password = malumot.get("password")
+                     )
+        if user is None:
+            return Response({"success": "False", "xabar": "User topilmadi"})
+        login(request, user)
+        return Response({"success": "True", "xabar": "User login qilindi"})
+
+class Logout(APIView):
+    def get(self, request):
+        logout(request)
+        return Response({"success": "True", "xabar": "User logout qilindi"})
+
+class IzohModelViewset(ModelViewSet):
+    queryset = Izoh.objects.all()
+    serializer_class = IzohSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Izoh.objects.filter(user=self.request.user)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = IzohSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, *args, **kwargs):
+        izoh = self.get_object()
+        if izoh.user != request.user:
+            izoh.delete()
+        return self.destroy(request, *args, **kwargs)
