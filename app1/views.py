@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from .models import *
 from .serializers import *
 from rest_framework import status, filters
@@ -202,7 +204,9 @@ class Logout(APIView):
 class IzohModelViewset(ModelViewSet):
     queryset = Izoh.objects.all()
     serializer_class = IzohSerializer
-    authentication_classes = [TokenAuthentication]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication] # JSON Web token
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
