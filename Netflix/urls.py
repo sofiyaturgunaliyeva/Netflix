@@ -7,6 +7,10 @@ from rest_framework.authtoken.views import obtain_auth_token
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from drf_spectacular.views import SpectacularAPIView, \
+    SpectacularRedocView, \
+    SpectacularSwaggerView
+
 router = DefaultRouter()
 router.register("aktyorlar",AktyorModelViewset)
 router.register("kinolar",KinoModelViewset)
@@ -15,6 +19,9 @@ router.register("izohlar",IzohModelViewset)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('hello/', HelloAPIView.as_view()),
+    path('apiview_docs/', SpectacularAPIView.as_view(), name="schema"),
+    path('docs/', SpectacularSwaggerView.as_view(url_name = "schema")),
+    path('redoc/', SpectacularRedocView.as_view(url_name = "schema")),
     path('', include(router.urls)),
     path('netf_token/',  obtain_auth_token),
     path('token_olish/',  TokenObtainPairView.as_view()),

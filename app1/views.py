@@ -1,4 +1,4 @@
-from django.contrib.auth import logout, authenticate
+from django.contrib.auth import logout, authenticate, login
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
 
@@ -31,6 +31,7 @@ class HelloAPIView(APIView):
         return Response(d)
 
 class AktyorlarAPIView(APIView):
+    serializer_class = AktyorSerializer
     def get(self,requset):
         soz = requset.query_params.get('qidiruv')
         if soz:
@@ -69,6 +70,7 @@ class AktyorlarAPIView(APIView):
 
 
 class IzohlarAPIView(APIView):
+    serializer_class = IzohSerializer
     def get(self, request):
         izohlar = Izoh.objects.all()
         serializer = IzohSerializer(izohlar, many=True)
