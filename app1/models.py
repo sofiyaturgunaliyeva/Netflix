@@ -15,8 +15,8 @@ class Aktyor(models.Model):
 class Kino(models.Model):
     nom = models.CharField(max_length=70)
     janr = models.CharField(max_length=30)
-    yil = models.DateField()
-    davomiylik = models.DurationField()
+    yil = models.DateField(null=True,blank=True)
+    davomiylik = models.DurationField(null = True,blank=True)
     aktyorlar = models.ManyToManyField(Aktyor)
     reyting = models.FloatField()
 
